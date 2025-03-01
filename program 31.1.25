@@ -1,0 +1,245 @@
+def caesar_cipher(text, shift):
+    result = ""
+
+    for char in text:
+        if char.isalpha():
+            start = ord('A') if char.isupper() else ord('a')
+            result += chr((ord(char) - start + shift) % 26 + start)
+        else:
+            result += char
+
+    return result
+
+# Example usage:
+plaintext = "Hello, World!"
+shift = 3
+ciphertext = caesar_cipher(plaintext, shift)
+print(f"Encrypted: {ciphertext}")
+
+# To decrypt, use the negative of the shift
+decrypted_text = caesar_cipher(ciphertext, -shift)
+print(f"Decrypted: {decrypted_text}")
+
+
+
+import string
+import random
+
+def generate_substitution_alphabet():
+    letters = list(string.ascii_lowercase)
+    shuffled = letters[:]
+    random.shuffle(shuffled)
+    return dict(zip(letters, shuffled))
+
+def monoalphabetic_substitution_cipher(text, substitution_alphabet):
+    result = ""
+
+    for char in text:
+        if char.isalpha():
+            if char.islower():
+                result += substitution_alphabet[char]
+            else:
+                result += substitution_alphabet[char.lower()].upper()
+        else:
+            result += char
+
+    return result
+
+# Example usage:
+plaintext = "Hello, World!"
+substitution_alphabet = generate_substitution_alphabet()
+ciphertext = monoalphabetic_substitution_cipher(plaintext, substitution_alphabet)
+print(f"Encrypted: {ciphertext}")
+
+# To decrypt, reverse the substitution alphabet
+reversed_substitution = {v: k for k, v in substitution_alphabet.items()}
+decrypted_text = monoalphabetic_substitution_cipher(ciphertext, reversed_substitution)
+print(f"Decrypted: {decrypted_text}")
+
+
+
+
+def generate_playfair_matrix(keyword):
+    alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ"
+    matrix = []
+    used = set()
+
+    for char in keyword.upper():
+        if char not in used and char in alphabet:
+            matrix.append(char)
+            used.add(char)
+
+    for char in alphabet:
+        if char not in used:
+            matrix.append(char)
+            used.add(char)
+
+    return [matrix[i:i + 5] for i in range(0, 25, 5)]
+
+def find_position(matrix, char):
+    for row in range(5):
+        for col in range(5):
+            if matrix[row][col] == char:
+                return row, col
+    return None, None
+
+def playfair_cipher(text, matrix, encrypt=True):
+    text = text.upper().replace('J', 'I')
+    text = ''.join([char for char in text if char.isalpha()])
+
+    if len(text) % 2 != 0:
+        text += 'X'
+
+    result = []
+
+    for i in range(0, len(text), 2):
+        a, b = text[i], text[i + 1]
+        row_a, col_a = find_position(matrix, a)
+        row_b, col_b = find_position(matrix, b)
+
+        if row_a == row_b:
+            if encrypt:
+                result.append(matrix[row_a][(col_a + 1) % 5])
+                result.append(matrix[row_b][(col_b + 1) % 5])
+            else:
+                result.append(matrix[row_a][(col_a - 1) % 5])
+                result.append(matrix[row_b][(col_b - 1) % 5])
+        elif col_a == col_b:
+            if encrypt:
+                result.append(matrix[(row_a + 1) % 5][col_a])
+                result.append(matrix[(row_b + 1) % 5][col_b])
+            else:
+                result.append(matrix[(row_a - 1) % 5][col_a])
+                result.append(matrix[(row_b - 1) % 5][col_b])
+        else:
+            result.append(matrix[row_a][col_b])
+            result.append(matrix[row_b][col_a])
+
+    return ''.join(result)
+
+# Example usage:
+keyword = "keyword"
+plaintext = "Hide the gold"
+
+matrix = generate_playfair_matrix(keyword)
+ciphertext = playfair_cipher(plaintext, matrix, encrypt=True)
+print(f"Encrypted: {ciphertext}")
+
+decrypted_text = playfair_cipher(ciphertext, matrix, encrypt=False)
+print(f"Decrypted: {decrypted_text}")
+
+
+
+import string
+
+def generate_cipher_alphabet(keyword):
+    keyword = ''.join(sorted(set(keyword), key=keyword.index))  # Remove duplicates, preserve order
+    remaining_letters = ''.join([ch for ch in string.ascii_lowercase if ch not in keyword])
+    cipher_alphabet = keyword + remaining_letters
+    return cipher_alphabet
+
+def create_substitution_dict(cipher_alphabet):
+    return {plain: cipher for plain, cipher in zip(string.ascii_lowercase, cipher_alphabet)}
+
+def encrypt(plaintext, substitution_dict):
+    return ''.join(substitution_dict.get(ch, ch) for ch in plaintext.lower())
+
+def decrypt(ciphertext, substitution_dict):
+    inverse_dict = {v: k for k, v in substitution_dict.items()}
+    return ''.join(inverse_dict.get(ch, ch) for ch in ciphertext.lower())
+
+# Example usage:
+keyword = "cipher"
+cipher_alphabet = generate_cipher_alphabet(keyword)
+substitution_dict = create_substitution_dict(cipher_alphabet)
+
+plaintext = "hello world"
+ciphertext = encrypt(plaintext, substitution_dict)
+print(f"Encrypted: {ciphertext}")
+
+decrypted_text = decrypt(ciphertext, substitution_dict)
+print(f"Decrypted: {decrypted_text}")
+
+
+
+
+def generate_playfair_matrix(keyword):
+    alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ"
+    keyword = "".join(sorted(set(keyword.upper()), key=keyword.index))
+    matrix = []
+    for char in keyword:
+        if char in alphabet and char not in matrix:
+            matrix.append(char)
+    for char in alphabet:
+        if char not in matrix:
+            matrix.append(char)
+    return [matrix[i:i + 5] for i in range(0, 25, 5)]
+
+def prepare_text(text):
+    text = text.upper().replace('J', 'I')
+    prepared = ""
+    i = 0
+    while i < len(text):
+        prepared += text[i]
+        if i + 1 < len(text) and text[i] == text[i + 1]:
+            prepared += 'X'
+        elif i + 1 < len(text):
+            prepared += text[i + 1]
+            i += 1
+        i += 1
+    if len(prepared) % 2 != 0:
+        prepared += 'X'
+    return prepared
+
+def find_position(matrix, char):
+    for row in range(5):
+        for col in range(5):
+            if matrix[row][col] == char:
+                return row, col
+    return None, None
+
+def playfair_encrypt(plaintext, keyword):
+    matrix = generate_playfair_matrix(keyword)
+    plaintext = prepare_text(plaintext)
+    ciphertext = ""
+    for i in range(0, len(plaintext), 2):
+        a, b = plaintext[i], plaintext[i + 1]
+        row_a, col_a = find_position(matrix, a)
+        row_b, col_b = find_position(matrix, b)
+        if row_a == row_b:
+            ciphertext += matrix[row_a][(col_a + 1) % 5]
+            ciphertext += matrix[row_b][(col_b + 1) % 5]
+        elif col_a == col_b:
+            ciphertext += matrix[(row_a + 1) % 5][col_a]
+            ciphertext += matrix[(row_b + 1) % 5][col_b]
+        else:
+            ciphertext += matrix[row_a][col_b]
+            ciphertext += matrix[row_b][col_a]
+    return ciphertext
+
+# Example usage:
+keyword = "keyword"
+plaintext = "Must see you over Cadogan West. Coming at once."
+ciphertext = playfair_encrypt(plaintext, keyword)
+print(f"Ciphertext: {ciphertext}")
+
+
+import numpy as np
+
+def hill_encrypt(plaintext, key_matrix):
+    plaintext = plaintext.replace(" ", "").lower()
+    if len(plaintext) % 2 != 0:
+        plaintext += 'x'
+    plaintext_numbers = [ord(char) - ord('a') for char in plaintext]
+    ciphertext = ""
+    for i in range(0, len(plaintext_numbers), 2):
+        vector = np.array(plaintext_numbers[i:i+2]).reshape(2, 1)
+        encrypted_vector = np.dot(key_matrix, vector) % 26
+        ciphertext += ''.join(chr(num + ord('a')) for num in encrypted_vector.flatten())
+    return ciphertext
+
+def hill_decrypt(ciphertext, key_matrix):
+    determinant = int(np.round(np.linalg.det(key_matrix))) % 26
+    multiplicative_inverse = pow
+::contentReference[oaicite:0]{index=0}
+ 
