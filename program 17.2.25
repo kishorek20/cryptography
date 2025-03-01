@@ -1,0 +1,183 @@
+import numpy as np
+
+def theta(state):
+    C = np.zeros((5, 64), dtype=int)
+    D = np.zeros((5, 64), dtype=int)
+    for x in range(5):
+        for z in range(64):
+            C[x][z] = state[x][0][z] ^ state[x][1][z] ^ state[x][2][z] ^ state[x][3][z] ^ state[x][4][z]
+    for x in range(5):
+        for z in range(64):
+            D[x][z] = C[(x - 1) % 5][z] ^ np.roll(C[(x + 1) % 5], 1)[z]
+    for x in range(5):
+        for y in range(5):
+            for z in range(64):
+                state[x][y][z] ^= D[x][z]
+    return state
+
+# Initialize state matrix with bitrate lanes having at least one nonzero bit
+state = np.zeros((5, 5, 64), dtype=int)
+for x in range(5):
+    for y in range(4):  # First 4 rows (bitrate portion)
+        state[x][y][0] = 1  # Set the least significant bit to 1
+
+# Capacity lanes are initially zero
+capacity_lanes = [(x, 4) for x in range(5)]
+
+# Apply Theta operation
+state = theta(state)
+
+# Check capacity lanes
+nonzero_lanes = [(x, y) for x, y in capacity_lanes if np.any(state[x][y] != 0)]
+print(f"Nonzero capacity lanes after one round: {nonzero_lanes}")
+
+
+#2
+import random
+
+def diffie_hellman_key_exchange(q, a):
+    # Alice chooses a private key
+    private_key_Alice = random.randint(1, q - 1)
+    # Alice computes her public key
+    public_key_Alice = pow(a, private_key_Alice, q)
+
+    # Bob chooses a private key
+    private_key_Bob = random.randint(1, q - 1)
+    # Bob computes his public key
+    public_key_Bob = pow(a, private_key_Bob, q)
+
+    # Alice and Bob exchange public keys and compute the shared secret
+    shared_secret_Alice = pow(public_key_Bob, private_key_Alice, q)
+    shared_secret_Bob = pow(public_key_Alice, private_key_Bob, q)
+
+    return shared_secret_Alice, shared_secret_Bob
+
+# Example usage
+q = 23  # A prime number
+a = 5   # A primitive root modulo q
+shared_secret_Alice, shared_secret_Bob = diffie_hellman_key_exchange(q, a)
+print(f"Shared secret computed by Alice: {shared_secret_Alice}")
+print(f"Shared secret computed by Bob: {shared_secret_Bob}")
+
+
+#3
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+
+def left_shift(bit_string):
+    shifted = int.from_bytes(bit_string, 'big') << 1
+    return (shifted & (2**len(bit_string)*8 - 1)).to_bytes(len(bit_string), 'big')
+
+def xor_bytes(a, b):
+    return bytes(x ^ y for x, y in zip(a, b))
+
+def generate_cmac_subkeys(key, block_size):
+    if block_size == 128:
+        R_b = 0x87
+    elif block_size == 64:
+        R_b = 0x1B
+    else:
+        raise ValueError("Unsupported block size")
+
+    cipher = AES.new(key, AES.MODE_ECB)
+    L = cipher.encrypt(bytes(block_size // 8))
+
+    K1 = left_shift(L)
+    if L[0] & 0x80:
+        K1 = xor_bytes(K1, bytes([R_b]) + bytes(block_size // 8 - 1))
+
+    K2 = left_shift(K1)
+    if K1[0] & 0x80:
+        K2 = xor_bytes(K2, bytes([R_b]) + bytes(block_size // 8 - 1))
+
+    return K1, K2
+
+# Example usage:
+key = b'This is a key123'  # 16 bytes key for AES-128
+K1, K2 = generate_cmac_subkeys(key, 128)
+print("K1:", K1.hex())
+print("K2:", K2.hex())
+
+
+#4
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+from Crypto.Random import get_random_bytes
+
+def encrypt_ecb(plaintext, key):
+    cipher = AES.new(key, AES.MODE_ECB)
+    padded_text = pad(plaintext, AES.block_size)
+    ciphertext = cipher.encrypt(padded_text)
+    return ciphertext
+
+def decrypt_ecb(ciphertext, key):
+    cipher = AES.new(key, AES.MODE_ECB)
+    padded_text = cipher.decrypt(ciphertext)
+    plaintext = unpad(padded_text, AES.block_size)
+    return plaintext
+
+def encrypt_cbc(plaintext, key):
+    iv = get_random_bytes(AES.block_size)
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    padded_text = pad(plaintext, AES.block_size)
+    ciphertext = cipher.encrypt(padded_text)
+    return iv + ciphertext
+
+def decrypt_cbc(ciphertext, key):
+    iv = ciphertext[:AES.block_size]
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    padded_text = cipher.decrypt(ciphertext[AES
+::contentReference[oaicite:4]{index=4}
+ 
+#5
+def egcd(a, b):
+    """Extended Euclidean Algorithm to find the modular inverse of a."""
+    x, y, u, v = 0, 1, 1, 0
+    while a != 0:
+        q, r = b // a, b % a
+        m, n = x - u * q, y - v * q
+        b, a, x, y, u, v = a, r, u, v, m, n
+    return b, x, y
+
+def modinv(a, m):
+    """Find the modular inverse of a under modulo m."""
+    g, x, _ = egcd(a, m)
+    if g != 1:
+        raise ValueError(f"No modular inverse for a = {a} under modulo {m}.")
+    return x % m
+
+def affine_encrypt(text, a, b):
+    """Encrypt the text using Affine Cipher with keys a and b."""
+    if egcd(a, 26)[0] != 1:
+        raise ValueError(f"Key 'a' = {a} is not coprime with 26.")
+    return ''.join(
+        chr(((a * (ord(char) - ord('A')) + b) % 26) + ord('A'))
+        if char.isalpha() else char
+        for char in text.upper()
+    )
+
+def affine_decrypt(cipher, a, b):
+    """Decrypt the text using Affine Cipher with keys a and b."""
+    if egcd(a, 26)[0] != 1:
+        raise ValueError(f"Key 'a' = {a} is not coprime with 26.")
+    a_inv = modinv(a, 26)
+    return ''.join(
+        chr(((a_inv * ((ord(char) - ord('A')) - b)) % 26) + ord('A'))
+        if char.isalpha() else char
+        for char in cipher.upper()
+    )
+
+# Example usage:
+a = 5  # Multiplicative key
+b = 8  # Additive key
+plaintext = "AFFINECIPHER"
+ciphertext = affine_encrypt(plaintext, a, b)
+decrypted_text = affine_decrypt(ciphertext, a, b)
+
+print(f"Plaintext: {plaintext}")
+print(f"Encrypted: {ciphertext}")
+print(f"Decrypted: {decrypted_text}")
+
+
+
+
