@@ -90,3 +90,79 @@ for shift, plaintext in results:
     print(f"Shift: {shift}, Plaintext: {plaintext}")
 
 
+from Crypto.Cipher import DES3
+from Crypto.Util.Padding import pad, unpad
+from Crypto.Random import get_random_bytes
+import binascii
+
+# 3DES CBC encryption
+def encrypt_3des_cbc(plaintext, key):
+    iv = get_random_bytes(8)  # Initialization Vector (8 bytes for DES)
+    cipher = DES3.new(key, DES3.MODE_CBC, iv)
+    ciphertext = cipher.encrypt(pad(plaintext.encode(), DES3.block_size))
+    return iv + ciphertext  # Return IV concatenated with ciphertext
+
+# 3DES CBC decryption
+def decrypt_3des_cbc(ciphertext, key):
+    iv = ciphertext[:8]  # Extract the IV
+    cipher = DES3.new(key, DES3.MODE_CBC, iv)
+    decrypted_data = unpad(cipher.decrypt(ciphertext[8:]), DES3.block_size)
+    return decrypted_data.decode()
+
+# Example usage
+key = b'0123456789abcdef0123456789abcdef01234567'  # 24-byte key for 3DES
+plaintext = "This is a secret message."
+
+# Encrypt
+encrypted_data = encrypt_3des_cbc(plaintext, key)
+print(f"Encrypted (Base64): {binascii.hexlify(encrypted_data)}")
+
+# Decrypt
+decrypted_text = decrypt_3des_cbc(encrypted_data, key)
+print(f"Decrypted text: {decrypted_text}")
+
+
+from Crypto.Cipher import DES
+from Crypto.Util.Padding import pad
+import binascii
+
+# Key schedule for DES encryption with modified subkey generation
+def des_key_schedule(key):
+    # We are assuming a 56-bit key, key must be 8 bytes long (64 bits), with parity bits removed
+    # Step 1: Apply the PC-1 permutation (56 bits key to 56 bits key)
+    # Step 2: Split key into two halves (left half, right half)
+    # Step 3: Perform circular shifts to generate 16 subkeys (K1 to K16)
+    key = list(key)  # for the purpose of illustration
+    
+    # Just a simplified version
+    subkeys = []
+    for i in range(16):
+        # Circular shift and generate subkeys
+        subkey = key  # This should be the actual subkey generation logic
+        subkeys.append(subkey)
+    
+    return subkeys
+
+# Example key generation
+key = b'abcdefgh'  # 8-byte key
+subkeys = des_key_schedule(key)
+
+# Print subkeys (simplified, not actual PC-1 or shift logic implemented)
+print("Subkeys:", subkeys)
+
+
+from Crypto.Cipher import DES
+import binascii
+
+# DES decryption using reverse key order
+def des_decrypt(ciphertext, key):
+    cipher = DES.new(key, DES.MODE_ECB)
+    plaintext = cipher.decrypt(ciphertext)
+    return plaintext
+
+# Example Usage
+key = b'8bytekey'  # 8-byte key
+ciphertext = binascii.unhexlify("3FA40E8A984D48156A271787AB8883F0")  # Example encrypted text
+
+decrypted_text = des_decrypt(ciphertext, key)
+print("Decrypted Text:", decrypted_text)
