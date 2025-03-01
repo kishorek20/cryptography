@@ -1,0 +1,92 @@
+#1
+import numpy as np
+from numpy.linalg import LinAlgError
+
+def mod_inverse(a, m):
+    # Extended Euclidean Algorithm to find modular inverse
+    m0, x0, x1 = m, 0, 1
+    if m == 1:
+        return 0
+    while a > 1:
+        q = a // m
+        m, a = a % m, m
+        x0, x1 = x1 - q * x0, x0
+    if x1 < 0:
+        x1 += m0
+    return x1
+
+def matrix_mod_inv(matrix, modulus):
+    # Find matrix determinant
+    det = int(np.round(np.linalg.det(matrix)))
+    det_inv = mod_inverse(det % modulus, modulus)
+    if det_inv is None:
+        raise ValueError("Matrix is not invertible under given modulus")
+    # Matrix of cofactors
+    matrix_modulus_inv = (
+        det_inv * np.round(det * np.linalg.inv(matrix)).astype(int) % modulus
+    )
+    return matrix_modulus_inv % modulus
+
+def known_plaintext_attack(plain_matrix, cipher_matrix, modulus=26):
+    try:
+        plain_matrix_inv = matrix_mod_inv(plain_matrix, modulus)
+    except ValueError as e:
+        print(f"Error: {e}")
+        return None
+    key_matrix = np.dot(plain_matrix_inv, cipher_matrix) % modulus
+    return key_matrix
+
+# Example usage:
+plaintext = "HELP"
+ciphertext = "RFKT"
+modulus = 26
+
+# Convert text to numerical form: A=0, B=1, ..., Z=25
+plain_nums = [ord(char) - ord('A') for char in plaintext]
+cipher_nums = [ord(char) - ord('A') for char in ciphertext]
+
+# Create 2x2 matrices for this example
+plain_matrix = np.array(plain_nums).reshape(2, 2)
+cipher_matrix = np.array(cipher_nums).reshape(2, 2)
+
+key_matrix = known_plaintext_attack(plain_matrix, cipher_matrix, modulus)
+if key_matrix is not None:
+    print("Recovered Key Matrix:")
+    print(key_matrix)
+
+#2
+from collections import Counter
+
+def decrypt_caesar(ciphertext, shift):
+    decrypted = []
+    for char in ciphertext:
+        if char.isalpha():
+            offset = ord('A') if char.isupper() else ord('a')
+            decrypted.append(chr((ord(char) - offset - shift) % 26 + offset))
+        else:
+            decrypted.append(char)
+    return ''.join(decrypted)
+
+def frequency_attack(ciphertext, top_n=10):
+    # English letter frequency (most common to least common)
+    english_freq_order = 'ETAOINSHRDLCUMWFGYPBVKJXQZ'
+    # Calculate letter frequency in ciphertext
+    counter = Counter(filter(str.isalpha, ciphertext.upper()))
+    most_common = [item[0] for item in counter.most_common()]
+    # Generate possible plaintexts
+    possible_plaintexts = []
+    for i in range(min(top_n, len(most_common))):
+        # Assume the most common letter in ciphertext corresponds to 'E'
+        assumed_shift = (ord(most_common[i]) - ord('E')) % 26
+        decrypted_text = decrypt_caesar(ciphertext, assumed_shift)
+        possible_plaintexts.append((assumed_shift, decrypted_text))
+    return possible_plaintexts
+
+# Example usage:
+ciphertext = "GZUD ZNK YKIXKZOUT YOTM ZNK YKIXKZOUT"
+top_n = 5
+results = frequency_attack(ciphertext, top_n)
+for shift, plaintext in results:
+    print(f"Shift: {shift}, Plaintext: {plaintext}")
+
+
