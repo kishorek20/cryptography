@@ -1,3 +1,4 @@
+#1
 def caesar_cipher(text, shift):
     result = ""
 
@@ -21,7 +22,7 @@ decrypted_text = caesar_cipher(ciphertext, -shift)
 print(f"Decrypted: {decrypted_text}")
 
 
-
+#2
 import string
 import random
 
@@ -57,7 +58,7 @@ decrypted_text = monoalphabetic_substitution_cipher(ciphertext, reversed_substit
 print(f"Decrypted: {decrypted_text}")
 
 
-
+#3
 
 def generate_playfair_matrix(keyword):
     alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ"
@@ -128,7 +129,7 @@ print(f"Encrypted: {ciphertext}")
 decrypted_text = playfair_cipher(ciphertext, matrix, encrypt=False)
 print(f"Decrypted: {decrypted_text}")
 
-
+#4
 
 import string
 
@@ -162,7 +163,7 @@ print(f"Decrypted: {decrypted_text}")
 
 
 
-
+#5
 def generate_playfair_matrix(keyword):
     alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ"
     keyword = "".join(sorted(set(keyword.upper()), key=keyword.index))
@@ -223,7 +224,7 @@ plaintext = "Must see you over Cadogan West. Coming at once."
 ciphertext = playfair_encrypt(plaintext, keyword)
 print(f"Ciphertext: {ciphertext}")
 
-
+#5
 import numpy as np
 
 def hill_encrypt(plaintext, key_matrix):
